@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "AgriConnect"
+description = "A simple agriculture guidance platform where farmers submit crop problems, find relevant experts, book consultations, and exchange messages."
+version = "1.0.0"
+id = "artifacts/agriconnect"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 26029
+
+[services.development]
+run = "pnpm --filter @workspace/agriconnect run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/agriconnect", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/agriconnect/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "26029"
+BASE_PATH = "/"

@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: agriconnect
+    description: Farmer and expert workflows
 paths:
   /healthz:
     get:
@@ -24,6 +26,200 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /experts:
+    get:
+      operationId: listExperts
+      tags: [agriconnect]
+      summary: List agriculture experts
+      parameters:
+        - name: expertise
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Experts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Expert"
+  /experts/{id}:
+    get:
+      operationId: getExpert
+      tags: [agriconnect]
+      summary: Get an expert profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Expert profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expert"
+        "404":
+          description: Expert not found
+  /me:
+    get:
+      operationId: getMyProfile
+      tags: [agriconnect]
+      summary: Get the signed-in user's profile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppProfile"
+        "401":
+          description: Sign-in required
+        "404":
+          description: Profile not set up yet
+    put:
+      operationId: saveMyProfile
+      tags: [agriconnect]
+      summary: Create or update the signed-in user's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileInput"
+      responses:
+        "200":
+          description: Saved profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppProfile"
+  /problems:
+    post:
+      operationId: createProblem
+      tags: [agriconnect]
+      summary: Submit a farming problem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProblemInput"
+      responses:
+        "201":
+          description: Submitted problem
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "401":
+          description: Sign-in required
+    get:
+      operationId: listMyProblems
+      tags: [agriconnect]
+      summary: List the signed-in farmer's problems
+      responses:
+        "200":
+          description: Submitted problems
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Problem"
+  /bookings:
+    get:
+      operationId: listMyBookings
+      tags: [agriconnect]
+      summary: List the signed-in user's bookings
+      responses:
+        "200":
+          description: Bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Booking"
+    post:
+      operationId: createBooking
+      tags: [agriconnect]
+      summary: Book a consultation with an expert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingInput"
+      responses:
+        "201":
+          description: Confirmed booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "401":
+          description: Sign-in required
+  /bookings/{bookingId}/messages:
+    get:
+      operationId: listBookingMessages
+      tags: [agriconnect]
+      summary: List messages in a consultation
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Consultation messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+    post:
+      operationId: createBookingMessage
+      tags: [agriconnect]
+      summary: Send a message in a consultation
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageInput"
+      responses:
+        "201":
+          description: Sent message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [agriconnect]
+      summary: Get a compact dashboard overview
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +229,176 @@ components:
           type: string
       required:
         - status
+    AppProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [farmer, expert]
+        location:
+          type: string
+        expertise:
+          type: ["string", "null"]
+        experienceYears:
+          type: ["integer", "null"]
+        consultationPrice:
+          type: ["integer", "null"]
+        availableTime:
+          type: ["string", "null"]
+      required: [id, name, email, role, location, expertise, experienceYears, consultationPrice, availableTime]
+    ProfileInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          minLength: 1
+        role:
+          type: string
+          enum: [farmer, expert]
+        location:
+          type: string
+        expertise:
+          type: ["string", "null"]
+        experienceYears:
+          type: ["integer", "null"]
+        consultationPrice:
+          type: ["integer", "null"]
+        availableTime:
+          type: ["string", "null"]
+      required: [name, email, role, location, expertise, experienceYears, consultationPrice, availableTime]
+    Expert:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        expertise:
+          type: string
+        experienceYears:
+          type: integer
+        rating:
+          type: number
+        consultationPrice:
+          type: integer
+        availableTime:
+          type: string
+        location:
+          type: string
+      required: [id, name, expertise, experienceYears, rating, consultationPrice, availableTime, location]
+    Problem:
+      type: object
+      properties:
+        id:
+          type: integer
+        farmerId:
+          type: string
+        crop:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        location:
+          type: string
+        createdAt:
+          type: string
+      required: [id, farmerId, crop, category, description, location, createdAt]
+    ProblemInput:
+      type: object
+      properties:
+        crop:
+          type: string
+          minLength: 1
+        category:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        location:
+          type: string
+          minLength: 1
+      required: [crop, category, description, location]
+    Booking:
+      type: object
+      properties:
+        id:
+          type: integer
+        farmerId:
+          type: string
+        farmerName:
+          type: string
+        expertId:
+          type: string
+        expertName:
+          type: string
+        problemId:
+          type: ["integer", "null"]
+        date:
+          type: string
+        time:
+          type: string
+        price:
+          type: integer
+        status:
+          type: string
+      required: [id, farmerId, farmerName, expertId, expertName, problemId, date, time, price, status]
+    BookingInput:
+      type: object
+      properties:
+        expertId:
+          type: string
+          minLength: 1
+        problemId:
+          type: ["integer", "null"]
+        date:
+          type: string
+        time:
+          type: string
+      required: [expertId, problemId, date, time]
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+        bookingId:
+          type: integer
+        senderId:
+          type: string
+        senderName:
+          type: string
+        text:
+          type: string
+        createdAt:
+          type: string
+      required: [id, bookingId, senderId, senderName, text, createdAt]
+    MessageInput:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+      required: [text]
+    DashboardSummary:
+      type: object
+      properties:
+        problemsCount:
+          type: integer
+        bookingsCount:
+          type: integer
+        messagesCount:
+          type: integer
+        upcomingBookingsCount:
+          type: integer
+      required: [problemsCount, bookingsCount, messagesCount, upcomingBookingsCount]
 
